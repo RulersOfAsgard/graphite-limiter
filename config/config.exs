@@ -36,10 +36,10 @@ config :prometheus, GraphiteLimiter.PlugExporter, # (you should replace this wit
   auth: false
 
 config :graphite_limiter,
-  graphite_url: "http://skywebs.qxlint/render/",
-  graphite_query:
-    "aliasByNode(highestMax(summarize(aggregated.counters.stats.tech.monitoring.rates.stats.*.*.*.count,\"2minutes\",\"sum\"), 15), 6, 7, 8, 9)",
-  graphite_dest_relay_addr: 'skystats.qxlint',
+  graphite_url: "localhost",
+  graphite_query: "some.graphite.query",
+  graphite_dest_relay_addr: "localhost",
+  graphite_dest_relay_port: 2003,
   graphite_api_module: GraphiteApi
 
 import_config "#{Mix.env()}.exs"

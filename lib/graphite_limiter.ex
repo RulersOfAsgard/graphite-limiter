@@ -18,7 +18,9 @@ defmodule GraphiteLimiter do
 
   defp connect do
     opts = [:binary, packet: :line, active: false]
-    addr = Application.get_env(:graphite_limiter, :graphite_dest_relay_addr)
+    addr =
+      Application.get_env(:graphite_limiter, :graphite_dest_relay_addr, "localhost")
+      |> String.to_charlist
     port = Application.get_env(:graphite_limiter, :graphite_dest_relay_port)
     Logger.debug(fn -> "connecting to: #{addr}:#{port}" end)
     case :gen_tcp.connect(addr, port, opts) do
@@ -35,11 +37,11 @@ defmodule GraphiteLimiter do
   end
 
   def handle_call({:send_to_destination, metric}, _from, %{socket: socket} = state) do
-    Logger.debug(fn -> "Sending metric `#{metric}`" end)
+    Logger.debug(fn -> "Sending metric `#{String.trim_trailing(metric, "\n")}`" end)
     case :gen_tcp.send(socket, metric) do
       :ok ->
         Instrumenter.inc_metrics_sent()
-        Logger.debug(fn -> "#{metric} sent" end)
+        Logger.debug(fn -> "#{String.trim_trailing(metric, "\n")} sent" end)
       err ->
         Instrumenter.inc_errors_sent(err)
         Logger.error(fn -> "#{inspect(err)}" end)
@@ -70,7 +72,7 @@ defmodule GraphiteLimiter do
 
   defp push_forward({metric, :block}) do
     Instrumenter.inc_metrics_blocked()
-    Logger.warn("Metric `#{metric}` blocked")
+    Logger.warn("Metric `#{String.trim_trailing(metric, "\n")}` blocked")
   end
   defp push_forward({metric, :ok}) do
     GenServer.call(GraphiteLimiter, {:send_to_destination, metric})

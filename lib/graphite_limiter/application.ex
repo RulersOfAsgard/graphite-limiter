@@ -6,7 +6,20 @@ defmodule GraphiteLimiter.Application do
   use Application
   @dest_port Application.get_env(:graphite_limiter, :graphite_dest_relay_port)
 
+  defp set_env(sys_env, app_env) do
+    env = System.get_env(sys_env) || Application.get_env(:graphite_limiter, app_env)
+    Application.put_env(:graphite_limiter, app_env, env)
+  end
+
+  defp runtime_configuration do
+    set_env("GRAPHITE_FETCH_URL", :graphite_url)
+    set_env("GRAPHITE_QUERY", :graphite_query)
+    set_env("GRAPHITE_FETCH_URL", :graphite_url)
+    set_env("GRAPHITE_DEST_ADDR", :graphite_dest_relay_addr)
+  end
+
   def start(_type, _args) do
+    runtime_configuration()
     # List all child processes to be supervised
     GraphiteLimiter.MetricsExporter.setup()
     GraphiteLimiter.Instrumenter.setup()

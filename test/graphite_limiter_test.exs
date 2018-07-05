@@ -1,4 +1,5 @@
 defmodule GraphiteLimiterTest do
+  @moduledoc false
   use ExUnit.Case, async: true
   use Plug.Test
   @moduletag :capture_log
@@ -45,7 +46,8 @@ defmodule GraphiteLimiterTest do
     test "if metric is blocked correctly" do
       Process.send(GraphiteFetcher, :update_cache, [])
       assert capture_log(fn ->
-        GraphiteLimiter.parse_metric(@bad_metric) end) =~ "Metric `#{@bad_metric}` blocked"
+        GraphiteLimiter.parse_metric(@bad_metric) end) =~
+          "Metric `#{String.trim_trailing(@bad_metric, "\n")}` blocked"
       assert Prometheus.Metric.Counter.value(:metrics_blocked_total) == 1
     end
   end
