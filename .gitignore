@@ -6,4 +6,7 @@
 erl_crash.dump
 *.ez
 *.beam
+*.lock
 /config/*.secret.exs
+# exclude vagrant machine files
+.vagrant/
