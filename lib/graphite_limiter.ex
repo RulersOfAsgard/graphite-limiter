@@ -36,6 +36,11 @@ defmodule GraphiteLimiter do
     {:noreply, connect()}
   end
 
+  def handle_info(:timeout, new_state) do
+    Logger.warn("Timeout occured")
+    new_state
+  end
+
   def handle_call({:send_to_destination, metric}, _from, %{socket: socket} = state) do
     Logger.debug(fn -> "Sending metric `#{String.trim_trailing(metric, "\n")}`" end)
     case :gen_tcp.send(socket, metric) do
