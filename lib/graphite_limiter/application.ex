@@ -8,11 +8,14 @@ defmodule GraphiteLimiter.Application do
 
   defp set_env(sys_env, app_env) do
     env = System.get_env(sys_env) || Application.get_env(:graphite_limiter, app_env)
-    if is_number(Application.get_env(:graphite_limiter, app_env)) do
-      int_env = String.to_integer(env)
-      Application.put_env(:graphite_limiter, app_env, int_env)
-    else
+    Application.put_env(:graphite_limiter, app_env, env)
+  end
+  defp set_env(sys_env, app_env, :number) do
+    env = System.get_env(sys_env) || Application.get_env(:graphite_limiter, app_env)
+    if is_number(env) do
       Application.put_env(:graphite_limiter, app_env, env)
+    else
+      Application.put_env(:graphite_limiter, app_env, String.to_integer(env))
     end
   end
 
@@ -21,7 +24,7 @@ defmodule GraphiteLimiter.Application do
     set_env("GRAPHITE_QUERY", :graphite_query)
     set_env("GRAPHITE_FETCH_URL", :graphite_url)
     set_env("GRAPHITE_DEST_ADDR", :graphite_dest_relay_addr)
-    set_env("GRAPHITE_DEST_PORT", :graphite_dest_relay_port)
+    set_env("GRAPHITE_DEST_PORT", :graphite_dest_relay_port, :number)
   end
 
   def start(_type, _args) do

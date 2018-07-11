@@ -54,8 +54,9 @@ defmodule GraphiteReceiver do
 
   defp send_to_limiter(data) do
     Logger.debug(fn -> "Receiving: #{String.trim_trailing(data, "\n")}" end)
-    Task.Supervisor.start_child(GraphiteReceiver.TaskSupervisor, fn ->
-      GraphiteLimiter.parse_metric(data)
-    end)
+    GraphiteLimiter.parse_metric(data)
+    # Task.Supervisor.start_child(GraphiteReceiver.TaskSupervisor, fn ->
+    #   GraphiteLimiter.parse_metric(data)
+    # end)
   end
 end
