@@ -23,13 +23,16 @@ defmodule GraphiteFetcher do
     {:ok, {metric_paths, refs}}
   end
 
-  def handle_call(:get_paths, _from, {metric_paths, _refs} = state) do
-    resp = with [paths: paths] <- :ets.lookup(metric_paths, :paths) do
+  def get_paths(table_name) do
+    with [paths: paths] <- :ets.lookup(table_name, :paths) do
       paths
     else
       _ -> []
     end
-    {:reply, resp, state}
+  end
+
+  def handle_call(:get_paths, _from, {metric_paths, _refs} = state) do
+    {:reply, get_paths(metric_paths), state}
   end
 
   def handle_info(:update_cache, {metric_table, refs}) do
@@ -73,9 +76,12 @@ defmodule GraphiteFetcher do
   defp extract_target_field({[[_, _] | _tail], metric}), do: [metric["target"]]
 
   defp fetch_data do
-    case @graphite_api.get_metrics() do
-       {:ok, response} -> response.body
-       {:error, _err} -> []
+    with {:ok, response} <- @graphite_api.get_metrics(),
+                    true <- is_list(response.body)
+    do
+      response.body
+    else
+      _ -> []
     end
   end
 

@@ -41,6 +41,26 @@ defmodule GraphiteLimiter do
     new_state
   end
 
+  def handle_info({:timeout, new_state}) do
+    Logger.warn("Timeout occured")
+    new_state
+  end
+
+  def handle_cast({:send_to_destination, metric}, %{socket: socket} = state) do
+    # Logger.debug(fn -> "Sending metric `#{String.trim_trailing(metric, "\n")}`" end)
+    case :gen_tcp.send(socket, metric) do
+      :ok ->
+        Instrumenter.inc_metrics_sent()
+        # Logger.debug(fn -> "#{String.trim_trailing(metric, "\n")} sent" end)
+      err ->
+        Instrumenter.inc_errors_sent(err)
+        Logger.error(fn -> "#{inspect(err)}" end)
+        # Raise error, to force reconnect
+        raise("Failed to connect to remote graphite server")
+    end
+    {:noreply, state}
+  end
+
   def handle_call({:send_to_destination, metric}, _from, %{socket: socket} = state) do
     Logger.debug(fn -> "Sending metric `#{String.trim_trailing(metric, "\n")}`" end)
     case :gen_tcp.send(socket, metric) do
@@ -63,8 +83,7 @@ defmodule GraphiteLimiter do
   end
 
   defp get_overloaded_paths do
-    Logger.debug("Fetching paths from cache")
-    GenServer.call(GraphiteFetcher, :get_paths)
+    GraphiteFetcher.get_paths(GraphiteFetcher)
   end
 
   defp match_metric(paths, metric) do
@@ -80,6 +99,7 @@ defmodule GraphiteLimiter do
     Logger.warn("Metric `#{String.trim_trailing(metric, "\n")}` blocked")
   end
   defp push_forward({metric, :ok}) do
-    GenServer.call(GraphiteLimiter, {:send_to_destination, metric})
+    # GenServer.cast(GraphiteLimiter, {:send_to_destination, metric})
+    :ok
   end
 end
