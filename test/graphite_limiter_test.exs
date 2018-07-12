@@ -24,6 +24,7 @@ defmodule GraphiteLimiterTest do
   end
 
   defp send_data(socket, data) do
+    Logger.warn("HELLLLLLLO")
     :ok = :gen_tcp.send(socket, data)
   end
 

@@ -36,6 +36,7 @@ config :prometheus, GraphiteLimiter.PlugExporter, # (you should replace this wit
   auth: false
 
 config :graphite_limiter,
+  send_buffer: 1000,
   graphite_url: "localhost",
   graphite_query: "some.graphite.query",
   graphite_dest_relay_addr: "localhost",

@@ -35,6 +35,7 @@ defmodule GraphiteLimiter.Application do
     children = [
       Plug.Adapters.Cowboy.child_spec(:http, GraphiteLimiter.MetricsExporter, [], port: 8080),
       {GraphiteFetcher, name: GraphiteFetcher},
+      {GraphiteSender, name: GraphiteSender},
       {GraphiteLimiter, name: GraphiteLimiter},
       {Task.Supervisor, name: GraphiteReceiver.TaskSupervisor},
       Supervisor.child_spec({Task, fn -> GraphiteReceiver.accept(2003) end}, restart: :permanent),

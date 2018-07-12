@@ -7,33 +7,12 @@ defmodule GraphiteLimiter do
   use GenServer
 
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, %{socket: nil}, opts)
+    GenServer.start_link(__MODULE__, %{}, opts)
   end
 
-  def init(_state) do
+  def init(state) do
     Logger.info("starting Limiter server")
-    socket = connect()
-    {:ok, %{socket: socket}}
-  end
-
-  defp connect do
-    opts = [:binary, packet: :line, active: false]
-    addr =
-      Application.get_env(:graphite_limiter, :graphite_dest_relay_addr, "localhost")
-      |> String.to_charlist
-    port = Application.get_env(:graphite_limiter, :graphite_dest_relay_port)
-    Logger.debug(fn -> "connecting to: #{addr}:#{port}" end)
-    case :gen_tcp.connect(addr, port, opts) do
-      {:error, _msg} ->
-        Process.sleep(1000)
-        connect()
-      {:ok, socket} -> socket
-    end
-  end
-
-  def handle_info(:connect, state) do
-    init(state)
-    {:noreply, connect()}
+    {:ok, state}
   end
 
   def handle_info(:timeout, new_state) do
@@ -46,34 +25,9 @@ defmodule GraphiteLimiter do
     new_state
   end
 
-  def handle_cast({:send_to_destination, metric}, %{socket: socket} = state) do
-    # Logger.debug(fn -> "Sending metric `#{String.trim_trailing(metric, "\n")}`" end)
-    case :gen_tcp.send(socket, metric) do
-      :ok ->
-        Instrumenter.inc_metrics_sent()
-        # Logger.debug(fn -> "#{String.trim_trailing(metric, "\n")} sent" end)
-      err ->
-        Instrumenter.inc_errors_sent(err)
-        Logger.error(fn -> "#{inspect(err)}" end)
-        # Raise error, to force reconnect
-        raise("Failed to connect to remote graphite server")
-    end
+  def handle_cast({:send_to_destination, metric}, state) do
+    GenServer.call(GraphiteSender, {:send, metric})
     {:noreply, state}
-  end
-
-  def handle_call({:send_to_destination, metric}, _from, %{socket: socket} = state) do
-    Logger.debug(fn -> "Sending metric `#{String.trim_trailing(metric, "\n")}`" end)
-    case :gen_tcp.send(socket, metric) do
-      :ok ->
-        Instrumenter.inc_metrics_sent()
-        Logger.debug(fn -> "#{String.trim_trailing(metric, "\n")} sent" end)
-      err ->
-        Instrumenter.inc_errors_sent(err)
-        Logger.error(fn -> "#{inspect(err)}" end)
-        # Raise error, to force reconnect
-        raise("Failed to connect to remote graphite server")
-    end
-    {:reply, :ok, state}
   end
 
   def parse_metric(metric) do
@@ -99,7 +53,8 @@ defmodule GraphiteLimiter do
     Logger.warn("Metric `#{String.trim_trailing(metric, "\n")}` blocked")
   end
   defp push_forward({metric, :ok}) do
+    GenServer.call(GraphiteSender, {:send, metric})
     # GenServer.cast(GraphiteLimiter, {:send_to_destination, metric})
-    :ok
+    # :ok
   end
 end

@@ -36,6 +36,9 @@ defmodule GraphiteLimiter.Instrumenter do
   def inc_metrics_sent do
     Counter.inc([name: :metrics_sent_total, labels: []])
   end
+  def inc_metrics_sent(value) do
+    Counter.inc([name: :metrics_sent_total, labels: []], value)
+  end
   def inc_metrics_blocked do
     Counter.inc([name: :metrics_blocked_total, labels: []])
   end

@@ -1,4 +1,5 @@
 defmodule GraphitFetcherTest do
+  @moduledoc false
   use ExUnit.Case, async: false
   import Mock
   require Logger
