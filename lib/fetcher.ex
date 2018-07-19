@@ -23,6 +23,7 @@ defmodule GraphiteFetcher do
     {:ok, {metric_paths, refs}}
   end
 
+  @spec get_paths(atom | :ets.tid()) :: list
   def get_paths(table_name) do
     with [paths: paths] <- :ets.lookup(table_name, :paths) do
       paths
@@ -61,6 +62,7 @@ defmodule GraphiteFetcher do
     end)
   end
 
+  @spec filter_datapoints_above_limit(map) :: {list, map}
   defp filter_datapoints_above_limit(%{"datapoints" => datapoints} = metric) do
     points_above_limit = datapoints
     |> Enum.reject(fn([value, _timestamp]) ->
@@ -72,9 +74,11 @@ defmodule GraphiteFetcher do
     {points_above_limit, metric}
   end
 
+  @spec extract_target_field({list, map}) :: list(String.t) | []
   defp extract_target_field({[], _metric}), do: []
   defp extract_target_field({[[_, _] | _tail], metric}), do: [metric["target"]]
 
+  @spec fetch_data() :: list
   defp fetch_data do
     with {:ok, response} <- @graphite_api.get_metrics(),
                     true <- is_list(response.body)
@@ -85,6 +89,7 @@ defmodule GraphiteFetcher do
     end
   end
 
+  @spec schedule_next_run(module | atom | pid, integer) :: reference
   defp schedule_next_run(server, delay) do
     Process.send_after(server, :update_cache, delay, [])
   end

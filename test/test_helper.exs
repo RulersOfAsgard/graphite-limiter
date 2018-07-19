@@ -1,6 +1,7 @@
 ExUnit.start()
 
 defmodule GraphiteApi.Mock do
+  @moduledoc false
   def get_metrics() do
     data = [
       %{

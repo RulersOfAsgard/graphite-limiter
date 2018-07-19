@@ -6,10 +6,12 @@ defmodule GraphiteLimiter.Application do
   use Application
   @dest_port Application.get_env(:graphite_limiter, :graphite_dest_relay_port)
 
+  @spec set_env(String.t, atom) :: :ok
   defp set_env(sys_env, app_env) do
     env = System.get_env(sys_env) || Application.get_env(:graphite_limiter, app_env)
     Application.put_env(:graphite_limiter, app_env, env)
   end
+  @spec set_env(String.t, atom, :number) :: :ok
   defp set_env(sys_env, app_env, :number) do
     env = System.get_env(sys_env) || Application.get_env(:graphite_limiter, app_env)
     if is_number(env) do
@@ -19,27 +21,42 @@ defmodule GraphiteLimiter.Application do
     end
   end
 
+  @spec runtime_configuration() :: :ok
   defp runtime_configuration do
     set_env("GRAPHITE_FETCH_URL", :graphite_url)
     set_env("GRAPHITE_QUERY", :graphite_query)
     set_env("GRAPHITE_FETCH_URL", :graphite_url)
     set_env("GRAPHITE_DEST_ADDR", :graphite_dest_relay_addr)
     set_env("GRAPHITE_DEST_PORT", :graphite_dest_relay_port, :number)
+    set_env("SEND_BUFFER", :send_buffer, :number)
+    set_env("SENDER_POOL", :sender_pool, :number)
+  end
+
+  @spec sender_pool() :: list
+  defp sender_pool do
+    pool_size = Application.get_env(:graphite_limiter, :sender_pool, 1)
+    1..pool_size
+    |> Enum.map(fn(nr) ->
+      Supervisor.child_spec({GraphiteSender, name: :"GraphiteSender#{nr}"}, id: :"sender#{nr}")
+    end)
   end
 
   def start(_type, _args) do
     runtime_configuration()
-    # List all child processes to be supervised
+
     GraphiteLimiter.MetricsExporter.setup()
     GraphiteLimiter.Instrumenter.setup()
-    children = [
+
+    base_children = [
       Plug.Adapters.Cowboy.child_spec(:http, GraphiteLimiter.MetricsExporter, [], port: 8080),
       {GraphiteFetcher, name: GraphiteFetcher},
-      {GraphiteSender, name: GraphiteSender},
-      {GraphiteLimiter, name: GraphiteLimiter},
       {Task.Supervisor, name: GraphiteReceiver.TaskSupervisor},
       Supervisor.child_spec({Task, fn -> GraphiteReceiver.accept(2003) end}, restart: :permanent),
     ]
+    children =
+      sender_pool()
+      |> List.flatten(base_children)
+
     opts = [strategy: :one_for_one, name: GraphiteLimiter.Supervisor]
 
     if  Application.get_env(:graphite_limiter, :run_test_server) do

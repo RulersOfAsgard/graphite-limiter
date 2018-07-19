@@ -14,6 +14,7 @@ defmodule GraphiteApi do
 
   plug(Tesla.Middleware.JSON)
 
+  @spec get_metrics() :: {:error, any} | {:ok, map}
   def get_metrics do
     get("")
   end

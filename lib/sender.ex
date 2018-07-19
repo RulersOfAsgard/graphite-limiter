@@ -18,6 +18,7 @@ defmodule GraphiteSender do
     {:ok, new_state}
   end
 
+  @spec connect :: port
   defp connect do
     opts = [:binary, packet: :line, active: false]
     addr =
@@ -29,11 +30,20 @@ defmodule GraphiteSender do
       {:error, _msg} ->
         Process.sleep(1000)
         connect()
-      {:ok, socket} -> socket
+      {:ok, socket} ->
+        Logger.debug(fn -> "connected #{inspect(socket)}" end)
+        socket
     end
   end
 
-  def handle_call({:send, message}, _from, state) do
+  @spec handle_info(:timeout, map) :: {:noreply, map}
+  def handle_info(:timeout, state) do
+    Logger.debug("TIMEOUT!!!!")
+    {:noreply, state}
+  end
+
+  @spec handle_cast({:send, String.t}, map) :: {:noreply, map, non_neg_integer}
+  def handle_cast({:send, message}, state) do
     {messages, queue_length} = {[message | state.messages], state.queue_length + 1}
     new_state =
       with true <- queue_length > Application.get_env(:graphite_limiter, :send_buffer),
@@ -42,26 +52,32 @@ defmodule GraphiteSender do
         Instrumenter.inc_metrics_sent(queue_length)
         %{state | queue_length: 0, messages: []}
       else
+        :socket_err ->
+          Logger.debug("Setting socket: nil")
+          %{state | socket: nil}
+        :error ->
+          %{state | queue_length: queue_length, messages: messages, socket: connect()}
         _ -> %{state | queue_length: queue_length, messages: messages}
       end
-    {:reply, :ok, new_state}
+    {:noreply, new_state, 4500}
   end
 
-  @spec send_bulk(list(String.t), pid())  :: :ok | :error
-  defp send_bulk(messages, socket) do
+  @spec send_bulk(list(String.t), port() | nil)  :: :ok | :error | :socket_error
+  defp send_bulk(messages, socket) when not is_nil(socket) do
     messages
     |> Enum.join("")
     |> send_message(socket)
   end
+  defp send_bulk(_messages, nil), do: :error
 
+  @spec send_message(String.t, port) :: :ok | :socket_err
   defp send_message(message, socket) do
     case :gen_tcp.send(socket, message) do
       :ok -> :ok
-      err ->
+      {:error, err} ->
         Instrumenter.inc_errors_sent(err)
-        Logger.error(fn -> "#{inspect(err)}" end)
-        # Raise error, to force reconnect
-        raise("Failed to connect to remote graphite server")
+        Logger.error(fn -> "ERROR on sending event #{inspect(err)}" end)
+        :socket_err
     end
   end
 

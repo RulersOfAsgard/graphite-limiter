@@ -24,7 +24,6 @@ defmodule GraphiteLimiterTest do
   end
 
   defp send_data(socket, data) do
-    Logger.warn("HELLLLLLLO")
     :ok = :gen_tcp.send(socket, data)
   end
 
@@ -46,8 +45,9 @@ defmodule GraphiteLimiterTest do
 
     test "if metric is blocked correctly" do
       Process.send(GraphiteFetcher, :update_cache, [])
+      sender_pool = Application.get_env(:graphite_limiter, :sender_pool)
       assert capture_log(fn ->
-        GraphiteLimiter.parse_metric(@bad_metric) end) =~
+        GraphiteLimiter.parse_metric(@bad_metric, sender_pool) end) =~
           "Metric `#{String.trim_trailing(@bad_metric, "\n")}` blocked"
       assert Prometheus.Metric.Counter.value(:metrics_blocked_total) == 1
     end
