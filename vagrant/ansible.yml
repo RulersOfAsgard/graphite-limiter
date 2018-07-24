@@ -1,0 +1,26 @@
+---
+
+- hosts: all
+  become: true
+
+  vars:
+    app_name: graphite-limiter
+    app_user: ubuntu
+    cache_valid_time: 900
+
+  tasks:
+    - name: Install common system packages
+      apt: name="{{ item }}" state=present update_cache=yes cache_valid_time={{ cache_valid_time }}
+      with_items:
+        - mc
+        - vim
+        - git
+        - build-essential
+        - inotify-tools
+
+    - name: Set PS1 to fancy one
+      become: no
+      lineinfile: dest=~/.bashrc line='export PS1="\u:\[$(tput sgr0)\]\[\033[38;5;207m\]\w\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]"'
+
+    - name: Set user password
+      user: name="{{ app_user }}" password={{ app_user|password_hash('sha512')}} update_password=always

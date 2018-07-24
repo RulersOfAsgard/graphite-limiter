@@ -1,0 +1,38 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+$install_ansible = <<SCRIPT
+apt-get -y install software-properties-common
+apt-add-repository ppa:ansible/ansible
+apt-get -y update
+apt-get -y install ansible
+SCRIPT
+
+Vagrant.configure(2) do |config|
+
+  config.vm.box_download_insecure=true
+  config.vm.box = "ubuntu/xenial64"
+  config.vm.synced_folder "../", "/app/graphite-limiter/", create: true
+  config.vm.network "forwarded_port", guest: 8080, host: 8080
+  config.vm.network "private_network", ip: "192.168.99.2"
+
+  config.vm.provider "virtualbox" do |v|
+    v.name = "graphite-limiter"
+    v.memory = 2048
+    v.cpus = 2
+  end
+
+  config.vm.provision 'shell', inline: $install_ansible
+  # Patch for https://github.com/mitchellh/vagrant/issues/6793
+  # src: stackoverflow.com/questions/35299304/
+  config.vm.provision "shell" do |s|
+    s.inline = '[[ ! -f $1 ]] || grep -F -q "$2" $1 || sed -i "/__main__/a \\    $2" $1'
+    s.args = ['/usr/bin/ansible-galaxy', "if sys.argv == ['/usr/bin/ansible-galaxy', '--help']: sys.argv.insert(1, 'info')"]
+  end
+
+  config.vm.provision "ansible_local" do |ansible|
+    # ansible.verbose = "v"
+    ansible.playbook = "ansible.yml"
+  end
+
+end

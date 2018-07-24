@@ -1,0 +1,21 @@
+language: elixir
+sudo: false
+env:
+  - MIX_ENV=test
+elixir:
+  - 1.6.2
+otp_release:
+  - 20.0
+before_script:
+  - mix compile
+  - MIX_ENV=dev travis_wait mix dialyzer --plt
+script:
+  - mix test
+  - mix credo --strict
+  - MIX_ENV=dev mix dialyzer --halt-exit-status
+after_success:
+  - "mix compile && mix coveralls.travis"
+cache:
+  directories:
+    - ~/.mix
+    - ~/.hex
