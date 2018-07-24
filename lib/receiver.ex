@@ -16,7 +16,7 @@ defmodule GraphiteReceiver do
     Logger.info("Accepting connections on port #{port}")
     # we have to get `sender_pool` env here, as keeping for example it in GraphiteLimiter
     # gen server state and fetching in while parsing a metric slows down whole process.
-    # Passing it as a arg in function, improves performance significanlty
+    # Passing it as an arg in function, improves performance significanlty
     sender_pool_size = Application.get_env(:graphite_limiter, :sender_pool, 1)
     loop_acceptor(socket, sender_pool_size)
   end

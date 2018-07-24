@@ -25,6 +25,7 @@ defmodule GraphiteLimiter.Application do
   defp runtime_configuration do
     set_env("GRAPHITE_FETCH_URL", :graphite_url)
     set_env("GRAPHITE_QUERY", :graphite_query)
+    set_env("GRAPHITE_DROP_LIMIT", :limit)
     set_env("GRAPHITE_FETCH_URL", :graphite_url)
     set_env("GRAPHITE_DEST_ADDR", :graphite_dest_relay_addr)
     set_env("GRAPHITE_DEST_PORT", :graphite_dest_relay_port, :number)

@@ -85,7 +85,9 @@ defmodule GraphiteFetcher do
     do
       response.body
     else
-      _ -> []
+      _ ->
+        Logger.warn("Failed to fetch graphite data")
+        []
     end
   end
 
