@@ -5,20 +5,27 @@ defmodule GraphiteReceiver do
   alias GraphiteLimiter.Instrumenter
   require Logger
 
+  @delay Application.get_env(:graphite_limiter, :listen_retry_delay, 1000)
+
   @doc """
   Starts accepting connections on the given `port`.
   """
   @spec accept(non_neg_integer) :: no_return
   def accept(port) do
-    {:ok, socket} =
-      :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true])
-
-    Logger.info("Accepting connections on port #{port}")
-    # we have to get `sender_pool` env here, as keeping for example it in GraphiteLimiter
-    # gen server state and fetching in while parsing a metric slows down whole process.
-    # Passing it as an arg in function, improves performance significanlty
-    sender_pool_size = Application.get_env(:graphite_limiter, :sender_pool, 1)
-    loop_acceptor(socket, sender_pool_size)
+    with {:ok, socket} <- :gen_tcp.listen(
+      port, [:binary, packet: :line, active: false, reuseaddr: true]) do
+          Logger.info("Accepting connections on port #{port}")
+          # we have to get `sender_pool` env here, as keeping for example it in GraphiteLimiter
+          # gen server state and fetching in while parsing a metric slows down whole process.
+          # Passing it as an arg in function, improves performance significanlty
+          sender_pool_size = Application.get_env(:graphite_limiter, :sender_pool, 1)
+          loop_acceptor(socket, sender_pool_size)
+    else
+      {:error, err} ->
+        Logger.warn("Failed to start receiver server: #{err}")
+        Process.sleep(@delay)
+        accept(port)
+    end
   end
 
   @spec loop_acceptor(port, integer) :: no_return
