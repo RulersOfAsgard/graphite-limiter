@@ -37,6 +37,7 @@ config :prometheus, GraphiteLimiter.PlugExporter, # (you should replace this wit
 
 config :graphite_limiter,
   reconnect_delay: 1000,
+  listen_retry_delay: 1000,
   send_buffer: 1000,
   sender_pool: 5,
   graphite_url: "http://localhost/render",
