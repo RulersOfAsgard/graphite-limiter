@@ -6,8 +6,6 @@ defmodule GraphiteSender do
   require Logger
   use GenServer
 
-  @delay Application.get_env(:graphite_limiter, :reconnect_delay, 1000)
-
   def start_link(opts) do
     GenServer.start_link(__MODULE__, %{}, opts)
   end
@@ -29,9 +27,7 @@ defmodule GraphiteSender do
     port = Application.get_env(:graphite_limiter, :graphite_dest_relay_port)
     Logger.debug(fn -> "connecting to: #{addr}:#{port}" end)
     case :gen_tcp.connect(addr, port, opts) do
-      {:error, _msg} ->
-        Process.sleep(@delay)
-        connect()
+      {:error, _msg} -> nil
       {:ok, socket} ->
         Logger.debug(fn -> "connected #{inspect(socket)}" end)
         socket
@@ -79,6 +75,7 @@ defmodule GraphiteSender do
       {:error, err} ->
         Instrumenter.inc_errors_sent(err)
         Logger.error(fn -> "ERROR on sending event #{inspect(err)}" end)
+        Port.close(socket)
         :socket_err
     end
   end
