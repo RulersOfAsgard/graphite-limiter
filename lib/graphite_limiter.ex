@@ -27,9 +27,8 @@ defmodule GraphiteLimiter do
   end
 
   @spec push_forward({String.t, :ok | :block}, integer) :: :ok
-  defp push_forward({metric, :block}, _pool) do
+  defp push_forward({_metric, :block}, _pool) do
     Instrumenter.inc_metrics_blocked()
-    Logger.warn("Metric `#{String.trim_trailing(metric, "\n")}` blocked")
   end
   defp push_forward({metric, :ok}, pool) do
     Enum.random(1..pool)
