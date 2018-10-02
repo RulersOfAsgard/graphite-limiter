@@ -13,9 +13,9 @@ defmodule GraphiteReceiver do
   @spec accept(non_neg_integer) :: no_return
   def accept(port) do
     with {:ok, socket} <- :gen_tcp.listen(
-      port, [:binary, packet: :line, active: false]) do
+      port, [:binary, packet: :line, active: false, reuseaddr: true]) do
           Logger.info("Accepting connections on port #{port}")
-          # we have to get `sender_pool` env here, as keeping for example it in GraphiteLimiter
+          # we have to get `sender_pool` env here, as keeping it for example in GraphiteLimiter
           # gen server state and fetching in while parsing a metric slows down whole process.
           # Passing it as an arg in function, improves performance significanlty
           sender_pool_size = Application.get_env(:graphite_limiter, :sender_pool, 1)
@@ -30,17 +30,20 @@ defmodule GraphiteReceiver do
 
   @spec loop_acceptor(port, integer) :: no_return
   defp loop_acceptor(socket, sender_pool_size) do
-    {:ok, client} = :gen_tcp.accept(socket)
-    {:ok, pid} =
-      Task.Supervisor.start_child(GraphiteReceiver.TaskSupervisor, fn ->
-        serve(client, sender_pool_size)
-      end)
-    :gen_tcp.controlling_process(client, pid)
-    # ^^ This makes the child process the “controlling process” of the client socket.
-    # If we didn’t do this, the acceptor would bring down all the clients if it crashed
-    # because sockets would be tied to the process that accepted them
-    # (which is the default behaviour).
-    loop_acceptor(socket, sender_pool_size)
+    with {:ok, client} <- :gen_tcp.accept(socket) do
+      {:ok, pid} =
+        Task.Supervisor.start_child(GraphiteReceiver.TaskSupervisor, fn ->
+          serve(client, sender_pool_size)
+        end)
+      :gen_tcp.controlling_process(client, pid)
+      # ^^ This makes the child process the “controlling process” of the client socket.
+      # If we didn’t do this, the acceptor would bring down all the clients if it crashed
+      # because sockets would be tied to the process that accepted them
+      # (which is the default behaviour).
+      loop_acceptor(socket, sender_pool_size)
+    else
+      _ -> Logger.warn("Fail on accepting socket")
+    end
   end
 
   @spec serve(port, integer) :: no_return
@@ -48,7 +51,6 @@ defmodule GraphiteReceiver do
     case read_line(client) do
       {:ok, data} ->
         Instrumenter.inc_metrics_received()
-        Logger.debug(fn -> "Client recv: #{data}" end)
         send_to_limiter(data, sender_pool_size)
         serve(client, sender_pool_size)
       {:error, err} ->
