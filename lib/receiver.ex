@@ -48,6 +48,7 @@ defmodule GraphiteReceiver do
     case read_line(client) do
       {:ok, data} ->
         Instrumenter.inc_metrics_received()
+        Logger.debug(fn -> "Client recv: #{data}" end)
         send_to_limiter(data, sender_pool_size)
         serve(client, sender_pool_size)
       {:error, err} ->
