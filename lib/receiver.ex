@@ -7,13 +7,14 @@ defmodule GraphiteReceiver do
 
   @delay Application.get_env(:graphite_limiter, :listen_retry_delay, 1000)
 
+
   @doc """
   Starts accepting connections on the given `port`.
   """
   @spec accept(non_neg_integer) :: no_return
   def accept(port) do
     with {:ok, socket} <- :gen_tcp.listen(
-      port, [:binary, packet: :line, active: false, reuseaddr: true]) do
+      port, [:binary, packet: :line, active: false]) do
           Logger.info("Accepting connections on port #{port}")
           # we have to get `sender_pool` env here, as keeping it for example in GraphiteLimiter
           # gen server state and fetching in while parsing a metric slows down whole process.
