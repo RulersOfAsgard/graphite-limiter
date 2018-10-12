@@ -49,10 +49,13 @@ defmodule GraphiteLimiter.Application do
     GraphiteLimiter.Instrumenter.setup()
 
     base_children = [
+      # Plug.Adapters.Cowboy2.child_spec(scheme: :http, plug: GraphiteLimiter.MetricsExporter, options: [port: 8080]),
+      # {Plug.Adapters.Cowboy2, scheme: :http, plug: GraphiteLimiter.MetricsExporter, options: [port: 8080]},
       Plug.Adapters.Cowboy.child_spec(:http, GraphiteLimiter.MetricsExporter, [], port: 8080),
       {GraphiteFetcher, name: GraphiteFetcher},
-      {Task.Supervisor, name: GraphiteReceiver.TaskSupervisor},
-      Supervisor.child_spec({Task, fn -> GraphiteReceiver.accept(2003) end}, restart: :permanent)
+      # {Task.Supervisor, name: GraphiteReceiver.TaskSupervisor},
+      # Supervisor.child_spec({Task, fn -> GraphiteReceiver.accept(2003) end}, restart: :permanent)
+      {GraphiteReceiver.Server, port: 2003}
     ]
     children =
       sender_pool()

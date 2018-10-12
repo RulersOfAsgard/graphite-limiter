@@ -11,7 +11,7 @@ defmodule GraphiteLimiter.MixProject do
       elixirc_paths: elixirc_paths(Mix.env),
       dialyzer: [plt_add_deps: :transitive, ignore_warnings: "dialyzer.ignore-warnings"],
       test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: ["coveralls": :test, "coveralls.detail": :test, "coveralls.post": :test, "coveralls.html": :test],
+      preferred_cli_env: [coveralls: :test, "coveralls.detail": :test, "coveralls.post": :test, "coveralls.html": :test],
       deps: deps()
     ]
   end
@@ -33,8 +33,9 @@ defmodule GraphiteLimiter.MixProject do
       {:tesla, "~> 1.0.0"},
       {:jason, ">= 1.0.0"},
       {:mock, "~> 0.3.0", only: :test},
-      {:cowboy, "~> 1.1.2"},
-      {:prometheus_plugs, "~> 1.1.5"},
+      {:cowboy, "~> 1.0"},
+      {:ranch, "~> 1.5.0", override: true},
+      {:prometheus_plugs, "~> 1.1"},
       {:distillery, "~> 1.5", runtime: false},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
