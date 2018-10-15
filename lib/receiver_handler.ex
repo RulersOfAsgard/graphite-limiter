@@ -70,24 +70,21 @@ defmodule GraphiteReceiver.Handler do
     {:stop, :normal, state}
   end
 
-  def handle_info({:error, reason}, %{peername: peername} = state) do
-    Logger.info(fn ->
-      "Error with peer #{peername}: #{inspect(reason)}"
-    end)
-
-    {:stop, :normal, state}
-  end
-
   # Helpers
 
   defp stringify_peername(socket) do
-    {:ok, {addr, port}} = :inet.peername(socket)
+    with {:ok, {addr, port}} <- :inet.peername(socket) do
+      address =
+        addr
+        |> :inet_parse.ntoa()
+        |> to_string()
 
-    address =
-      addr
-      |> :inet_parse.ntoa()
-      |> to_string()
-
-    "#{address}:#{port}"
+      "#{address}:#{port}"
+    else
+      {:error, :enotconn} -> "unknown (not connected)"
+      _ ->
+        Logger.error("Failed to get peername")
+        ""
+    end
   end
 end
