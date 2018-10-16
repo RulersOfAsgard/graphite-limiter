@@ -20,7 +20,7 @@ defmodule GraphiteReceiver.Server do
   Initiates the listener (pool of acceptors).
   """
   def init(port: port) do
-    opts = [{:port, port}]
+    opts = [{:port, port}, {:max_connections, 3000}]
 
     {:ok, pid} = :ranch.start_listener(:receiver_server, :ranch_tcp, opts, Handler, [])
 
