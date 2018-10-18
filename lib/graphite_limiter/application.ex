@@ -31,6 +31,8 @@ defmodule GraphiteLimiter.Application do
     set_env("GRAPHITE_DEST_PORT", :graphite_dest_relay_port, :number)
     set_env("SEND_BUFFER", :send_buffer, :number)
     set_env("SENDER_POOL", :sender_pool, :number)
+    set_env("HTTP_PORT", :http_port, :number)
+    set_env("RECEIVER_PORT", :receiver_port, :number)
   end
 
   @spec sender_pool() :: list
@@ -49,13 +51,11 @@ defmodule GraphiteLimiter.Application do
     GraphiteLimiter.Instrumenter.setup()
 
     base_children = [
-      # Plug.Adapters.Cowboy2.child_spec(scheme: :http, plug: GraphiteLimiter.MetricsExporter, options: [port: 8080]),
-      # {Plug.Adapters.Cowboy2, scheme: :http, plug: GraphiteLimiter.MetricsExporter, options: [port: 8080]},
-      Plug.Adapters.Cowboy.child_spec(:http, GraphiteLimiter.MetricsExporter, [], port: 8080),
+      Plug.Adapters.Cowboy.child_spec(
+        :http, GraphiteLimiter.MetricsExporter, [],
+        port: Application.get_env(:graphite_limiter, :http_port)),
       {GraphiteFetcher, name: GraphiteFetcher},
-      # {Task.Supervisor, name: GraphiteReceiver.TaskSupervisor},
-      # Supervisor.child_spec({Task, fn -> GraphiteReceiver.accept(2003) end}, restart: :permanent)
-      {GraphiteReceiver.Server, port: 2003}
+      {GraphiteReceiver.Server, port: Application.get_env(:graphite_limiter, :receiver_port)}
     ]
     children =
       sender_pool()
