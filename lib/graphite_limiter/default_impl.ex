@@ -38,6 +38,8 @@ defmodule GraphiteLimiter.DefaultImpl do
   @spec build_path({String.t, [String.t]}) :: String.t
   defp build_path({metric, path_depth}) do
     metric
+    |> String.split(" ")
+    |> fn([name | _rest]) -> name end.()
     |> String.split(".")
     |> Enum.take(path_depth)
     |> Enum.join(".")
