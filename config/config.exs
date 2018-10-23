@@ -47,7 +47,7 @@ config :graphite_limiter,
   graphite_dest_relay_addr: "localhost",
   graphite_dest_relay_port: 2003,
   metrics_api_module: PrometheusApi,
-  prometheus_query: "topk(10, sum(irate(metrics_by_path_total[2m])) by (path))",
+  prometheus_query: "topk(10, sum(increase(metrics_by_path_total[2m])) by (path))",
   prometheus_url: "http://localhost:9090"
 
 

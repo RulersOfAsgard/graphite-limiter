@@ -25,7 +25,7 @@ defmodule PrometheusApi do
   def get_metrics do
     now = DateTime.utc_now
     |> DateTime.to_unix
-    with {:ok, response} <- get("api/v1/query_range", query: [start: now - 120, end: now]),
+    with {:ok, response} <- get("api/v1/query_range", query: [start: now - 600, end: now]),
          true <- is_list(response.body["data"]["result"]) do
           response.body["data"]["result"]
           |> serialize
@@ -40,8 +40,18 @@ defmodule PrometheusApi do
     results
     |> Enum.map(fn(x) ->
       datapoints = x["values"]
-      |> Enum.map(&(Enum.reverse(&1)))
+      |> Enum.map(fn([timestamp, value]) ->
+        int_value = value
+        |> to_integer
+        [int_value, timestamp] end)
       %{"target" => x["metric"]["path"], "datapoints" => datapoints}
     end)
+  end
+
+  @spec to_integer(String.t) :: integer
+  defp to_integer(value) do
+    value
+    |> String.split(".")
+    |> fn([int_part | _fraction]) -> String.to_integer(int_part) end.()
   end
 end
