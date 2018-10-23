@@ -3,6 +3,8 @@ defmodule GraphiteApi do
   use Tesla
   require Logger
 
+  @behaviour MetricsApi.Impl
+
   plug(Tesla.Middleware.BaseUrl, Application.get_env(:graphite_limiter, :graphite_url))
 
   plug(

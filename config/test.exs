@@ -8,5 +8,5 @@ config :graphite_limiter,
   graphite_query: "sample.path.to.metric",
   graphite_dest_relay_addr: "localhost",
   graphite_dest_relay_port: 2004,
-  graphite_api_module: GraphiteApi.Mock,
+  metrics_api_module: GraphiteApi.Mock,
   run_test_server: true

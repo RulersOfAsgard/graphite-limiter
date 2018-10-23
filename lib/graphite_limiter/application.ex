@@ -29,6 +29,8 @@ defmodule GraphiteLimiter.Application do
     set_env("GRAPHITE_FETCH_URL", :graphite_url)
     set_env("GRAPHITE_DEST_ADDR", :graphite_dest_relay_addr)
     set_env("GRAPHITE_DEST_PORT", :graphite_dest_relay_port, :number)
+    set_env("PROMETHEUS_FETCH_URL", :prometheus_url)
+    set_env("PROMETHEUS_QUERY", :prometheus_query)
     set_env("SEND_BUFFER", :send_buffer, :number)
     set_env("SENDER_POOL", :sender_pool, :number)
     set_env("HTTP_PORT", :http_port, :number)
@@ -55,7 +57,7 @@ defmodule GraphiteLimiter.Application do
         :http, GraphiteLimiter.MetricsExporter, [],
         port: Application.get_env(:graphite_limiter, :http_port)),
       {GraphiteFetcher, name: GraphiteFetcher},
-      {GraphiteReceiver.Server, port: Application.get_env(:graphite_limiter, :receiver_port)}
+      {GraphiteReceiver, port: Application.get_env(:graphite_limiter, :receiver_port)}
     ]
     children =
       sender_pool()

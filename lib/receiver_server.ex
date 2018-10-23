@@ -1,4 +1,4 @@
-defmodule GraphiteReceiver.Server do
+defmodule GraphiteReceiver do
   @moduledoc """
   A simple TCP server.
   """
