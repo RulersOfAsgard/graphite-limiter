@@ -4,7 +4,7 @@ defmodule GraphiteLimiter.DefaultImpl do
   @behaviour GraphiteLimiter.Impl
 
   @statsd_prefix Application.get_env(:graphite_limiter, :statsd_prefix, "aggregated")
-  @statsd_prefix_length Application.get_env(:graphite_limiter, :statsd_prefix, 1)
+  @statsd_prefix_length Application.get_env(:graphite_limiter, :statsd_prefix_length, 1)
   @path_depth Application.get_env(:graphite_limiter, :metrics_path_depth, 4)
 
 
@@ -14,19 +14,17 @@ defmodule GraphiteLimiter.DefaultImpl do
     |> calculate_path_depth
     |> build_path
     |> increase_counter
-
-    GraphiteFetcher.get_paths(GraphiteFetcher)
-    |> GraphiteLimiter.Router.validate_metric(metric, sender_pool_size)
+    |> GraphiteLimiter.Router.validate_metric(sender_pool_size)
   end
 
-  @spec increase_counter({String.t, integer}) :: :ok
-  defp increase_counter({path, path_length}) do
-    if path_length >= @path_depth do
-      Instrumenter.inc_metrics_by_path(path)
-    end
+  @spec increase_counter({String.t, String.t, :found | :not_found}) :: {String.t, :valid | :not_valid}
+  defp increase_counter({metric, _path, :not_found}), do: {metric, :not_valid}
+  defp increase_counter({metric, path, :found}) do
+    Instrumenter.inc_metrics_by_path(path)
+    {metric, :valid}
   end
 
-  @spec calculate_path_depth(String.t) :: integer
+  @spec calculate_path_depth(String.t) :: {String.t, integer}
   defp calculate_path_depth(metric) do
     path_depth = case String.starts_with?(metric, @statsd_prefix) do
       true ->  @path_depth + @statsd_prefix_length + 1
@@ -35,20 +33,23 @@ defmodule GraphiteLimiter.DefaultImpl do
     {metric, path_depth}
   end
 
-  @spec build_path({String.t, [String.t]}) :: {String.t, integer}
+  @spec build_path({String.t, [String.t]}) :: {String.t, String.t, :found | :not_found}
   defp build_path({metric, path_depth}) do
-    metric
+    {path, status} = metric
     |> String.split(" ")
     |> fn([name | _rest]) -> name end.()
     |> String.splitter(".")
     |> Enum.take(path_depth)
-    |> actual_path_length
+    |> path_extracted?(path_depth)
     |> join_parts
+    {metric, path, status}
   end
 
-  @spec actual_path_length(list(String.t)) :: {list(String.t), integer}
-  defp actual_path_length(metric_parts), do: {metric_parts, length(metric_parts)}
-
-  @spec join_parts({list(String.t), integer}) :: {String.t, integer}
-  defp join_parts({metric_parts, nr_of_parts}), do: {Enum.join(metric_parts, "."), nr_of_parts}
+  @spec path_extracted?(list(String.t), integer) :: {list(String.t), true | false}
+  defp path_extracted?(metric_parts, path_depth) do
+    {metric_parts, length(metric_parts) >= path_depth}
+  end
+  @spec join_parts({list(String.t), true | false}) :: {String.t, :found | :not_found}
+  defp join_parts({metric_parts, true}), do: {Enum.join(metric_parts, "."), :found}
+  defp join_parts({_metric_parts, false}), do: {"", :not_found}
 end

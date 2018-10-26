@@ -14,6 +14,9 @@ defmodule GraphiteLimiter.Instrumenter do
     Counter.declare([name: :metrics_blocked_total,
                     help: "Metrics blocked count.",
                     labels: []])
+    Counter.declare([name: :metrics_dropped_total,
+                    help: "Metrics dropped count.",
+                    labels: []])
     Counter.declare([name: :errors_received_total,
                     help: "errors on metrics receive count.",
                     labels: [:type]])
@@ -53,6 +56,11 @@ defmodule GraphiteLimiter.Instrumenter do
   @spec inc_metrics_blocked :: :ok
   def inc_metrics_blocked do
     Counter.inc([name: :metrics_blocked_total, labels: []])
+  end
+
+  @spec inc_metrics_dropped :: :ok
+  def inc_metrics_dropped do
+    Counter.inc([name: :metrics_dropped_total, labels: []])
   end
 
   @spec inc_metrics_by_path(String.t) :: :ok

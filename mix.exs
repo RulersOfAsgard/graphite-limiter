@@ -34,6 +34,7 @@ defmodule GraphiteLimiter.MixProject do
       {:jason, ">= 1.0.0"},
       {:mock, "~> 0.3.0", only: :test},
       {:cowboy, "~> 1.0"},
+      {:plug_cowboy, "~> 1.0"},
       {:ranch, "~> 1.5.0", override: true},
       {:prometheus_plugs, "~> 1.1"},
       {:distillery, "~> 1.5", runtime: false},
