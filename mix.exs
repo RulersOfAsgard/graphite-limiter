@@ -40,6 +40,7 @@ defmodule GraphiteLimiter.MixProject do
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.8", only: :test},
+      {:benchee, "~> 0.11", only: :dev}
     ]
   end
 end
