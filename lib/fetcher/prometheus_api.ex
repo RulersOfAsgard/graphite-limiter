@@ -50,8 +50,8 @@ defmodule PrometheusApi do
 
   @spec to_integer(String.t) :: integer
   defp to_integer(value) do
-    value
-    |> String.split(".")
-    |> fn([int_part | _fraction]) -> String.to_integer(int_part) end.()
+    {int, _} = value
+    |> Integer.parse
+    int
   end
 end
