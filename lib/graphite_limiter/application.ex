@@ -11,13 +11,27 @@ defmodule GraphiteLimiter.Application do
     env = System.get_env(sys_env) || Application.get_env(:graphite_limiter, app_env)
     Application.put_env(:graphite_limiter, app_env, env)
   end
-  @spec set_env(String.t, atom, :number) :: :ok
+
+  @spec set_env(String.t, atom, :number | :list) :: :ok
   defp set_env(sys_env, app_env, :number) do
     env = System.get_env(sys_env) || Application.get_env(:graphite_limiter, app_env)
     if is_number(env) do
       Application.put_env(:graphite_limiter, app_env, env)
     else
       Application.put_env(:graphite_limiter, app_env, String.to_integer(env))
+    end
+  end
+
+  defp set_env(sys_env, app_env, :list) do
+    env = System.get_env(sys_env) || Application.get_env(:graphite_limiter, app_env)
+    if is_list(env) do
+      Application.put_env(:graphite_limiter, app_env, env)
+    else
+      value = env
+      |> String.replace(" ", "")
+      |> String.split(",")
+
+      Application.put_env(:graphite_limiter, app_env, value)
     end
   end
 
@@ -35,6 +49,7 @@ defmodule GraphiteLimiter.Application do
     set_env("SENDER_POOL", :sender_pool, :number)
     set_env("HTTP_PORT", :http_port, :number)
     set_env("RECEIVER_PORT", :receiver_port, :number)
+    set_env("WHITELIST", :path_whitelist, :list)
   end
 
   @spec sender_pool() :: list
