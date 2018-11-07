@@ -8,8 +8,8 @@ defmodule GraphiteLimiter do
 
   @parser Application.get_env(:graphite_limiter, :parser, GraphiteLimiter.DefaultImpl)
 
-  @spec parse_metric(String.t, integer) :: :ok
-  def parse_metric(metric, sender_pool_size) do
-    @parser.parse_metric(metric, sender_pool_size)
+  @spec parse_metric(String.t, map) :: :ok
+  def parse_metric(metric, opts) do
+    @parser.parse_metric(metric, opts)
   end
 end

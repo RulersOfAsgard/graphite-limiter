@@ -10,4 +10,4 @@ config :graphite_limiter,
   graphite_dest_relay_port: 2004,
   metrics_api_module: GraphiteApi.Mock,
   run_test_server: true,
-  path_whitelist: ["carbon.monitoring.test"]
+  path_whitelist: ["carbon.monitoring.test", "some.other.path"]

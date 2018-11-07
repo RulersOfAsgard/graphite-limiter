@@ -6,17 +6,16 @@ defmodule GraphiteLimiter.DefaultImpl do
   @statsd_prefix Application.get_env(:graphite_limiter, :statsd_prefix, "aggregated")
   @statsd_prefix_length Application.get_env(:graphite_limiter, :statsd_prefix_length, 1)
   @path_depth Application.get_env(:graphite_limiter, :metrics_path_depth, 4)
-  @white_list Application.get_env(:graphite_limiter, :path_whitelist, [])
 
 
-  @spec parse_metric(String.t, integer) :: :ok
-  def parse_metric(metric, sender_pool_size) do
+  @spec parse_metric(String.t, map) :: :ok
+  def parse_metric(metric, opts) do
     metric
     |> calculate_path_depth
     |> build_path
-    |> check_whitelist
+    |> check_whitelist(opts.white_list)
     |> increase_counter
-    |> GraphiteLimiter.Router.validate_metric(sender_pool_size)
+    |> GraphiteLimiter.Router.validate_metric(opts.sender_pool_size)
   end
 
   @spec increase_counter({String.t, String.t, :found | :not_found | :skip}) :: {String.t, :valid | :not_valid}
@@ -57,10 +56,10 @@ defmodule GraphiteLimiter.DefaultImpl do
   defp join_parts({metric_parts, true}), do: {Enum.join(metric_parts, "."), :found}
   defp join_parts({_metric_parts, false}), do: {"", :not_found}
 
-  @spec check_whitelist({String.t, String.t, :found | :not_found}) :: {String.t, String.t, :found | :not_found | :skip}
-  defp check_whitelist({metric, path, :not_found}), do: {metric, path, :not_found}
-  defp check_whitelist({metric, path, :found}) do
-    status = @white_list
+  @spec check_whitelist({String.t, String.t, :found | :not_found}, list(String.t)) :: {String.t, String.t, :found | :not_found | :skip}
+  defp check_whitelist({metric, path, :not_found}, _white_list), do: {metric, path, :not_found}
+  defp check_whitelist({metric, path, :found}, white_list) do
+    status = white_list
     |> Enum.find("", fn(element) -> String.starts_with?(metric, element) end)
     |> set_status
 

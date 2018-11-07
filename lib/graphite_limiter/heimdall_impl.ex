@@ -6,8 +6,8 @@ defmodule GraphiteLimiter.HeimdallImpl do
 
   @behaviour GraphiteLimiter.Impl
 
-  @spec parse_metric(String.t, integer) :: :ok
-  def parse_metric(metric, sender_pool_size) do
+  @spec parse_metric(String.t, map) :: :ok
+  def parse_metric(metric, %{sender_pool_size: sender_pool_size}) do
     GraphiteLimiter.Router.validate_metric({metric, :valid}, sender_pool_size)
   end
 end
