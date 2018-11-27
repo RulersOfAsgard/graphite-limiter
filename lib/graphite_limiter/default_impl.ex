@@ -7,12 +7,11 @@ defmodule GraphiteLimiter.DefaultImpl do
   @statsd_prefix_length Application.get_env(:graphite_limiter, :statsd_prefix_length, 1)
   @path_depth Application.get_env(:graphite_limiter, :metrics_path_depth, 4)
 
-
   @spec parse_metric(String.t, map) :: :ok
   def parse_metric(metric, opts) do
     metric
     |> calculate_path_depth
-    |> build_path
+    |> build_path(opts.valid_prefixes)
     |> check_whitelist(opts.white_list)
     |> increase_counter
     |> GraphiteLimiter.Router.validate_metric(opts.sender_pool_size)
@@ -35,21 +34,25 @@ defmodule GraphiteLimiter.DefaultImpl do
     {metric, path_depth}
   end
 
-  @spec build_path({String.t, [String.t]}) :: {String.t, String.t, :found | :not_found}
-  defp build_path({metric, path_depth}) do
+  @spec build_path({String.t, integer}, [String.t]) :: {String.t, String.t, :found | :not_found}
+  defp build_path({metric, path_depth}, valid_prefixes) do
     {path, status} = metric
     |> String.split(" ")
     |> fn([name | _rest]) -> name end.()
     |> String.splitter(".")
     |> Enum.take(path_depth)
-    |> path_extracted?(path_depth)
+    |> path_extracted?(path_depth, valid_prefixes)
     |> join_parts
     {metric, path, status}
   end
 
-  @spec path_extracted?(list(String.t), integer) :: {list(String.t), true | false}
-  defp path_extracted?(metric_parts, path_depth) do
-    {metric_parts, length(metric_parts) >= path_depth}
+  @spec path_extracted?(list(String.t), integer, list(String.t)) :: {list(String.t), true | false}
+  defp path_extracted?([first | _rest] = metric_parts, path_depth, valid_prefixes) do
+    status = with true <- length(metric_parts) >= path_depth,
+                  true <- String.starts_with?(first, valid_prefixes) do
+               true
+             end
+    {metric_parts, status}
   end
 
   @spec join_parts({list(String.t), true | false}) :: {String.t, :found | :not_found}

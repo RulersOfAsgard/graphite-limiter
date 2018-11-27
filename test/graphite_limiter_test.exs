@@ -7,14 +7,21 @@ defmodule GraphiteLimiterTest do
   require Logger
   require Prometheus.Metric.Counter
 
-  @good_path "good.path.min.metric"
+  @good_path "stats.path.min.metric"
   @bad_path "stats.overloaded.path.metric"
   @good_metric "#{@good_path}.foo 2 1528446600\n"
   @bad_metric "#{@bad_path}.bar 2 1528446600\n"
 
   @white_list_path "carbon.monitoring.test.foo"
   @white_list_metric "#{@white_list_path} 4 1528366588\n"
-  @to_short "to.short.metric 4 1528366588\n"
+  @to_short "stats.short.metric 4 1528366588\n"
+  @invalid_prefix_metric "234#{@good_metric}"
+
+  @parse_opts %{
+    sender_pool_size: Application.get_env(:graphite_limiter, :sender_pool),
+    white_list: Application.get_env(:graphite_limiter, :path_whitelist),
+    valid_prefixes: Application.get_env(:graphite_limiter, :valid_prefixes)
+  }
 
   setup do
     opts = [:binary, packet: :line, active: false]
@@ -44,15 +51,20 @@ defmodule GraphiteLimiterTest do
 
     test "if metric is blocked correctly" do
       Process.send(GraphiteFetcher, :update_cache, [])
-      sender_pool = Application.get_env(:graphite_limiter, :sender_pool)
-      GraphiteLimiter.parse_metric(@bad_metric, sender_pool)
+      GraphiteLimiter.parse_metric(@bad_metric, @parse_opts)
       assert Prometheus.Metric.Counter.value(:metrics_blocked_total) == 1
       assert Prometheus.Metric.Counter.value(:metrics_sent_total) == 0
     end
 
     test "if metric is dropped" do
-      sender_pool = Application.get_env(:graphite_limiter, :sender_pool)
-      GraphiteLimiter.parse_metric(@to_short, sender_pool)
+      GraphiteLimiter.parse_metric(@to_short, @parse_opts)
+      assert Prometheus.Metric.Counter.value(:metrics_blocked_total) == 0
+      assert Prometheus.Metric.Counter.value(:metrics_sent_total) == 0
+      assert Prometheus.Metric.Counter.value(:metrics_dropped_total) == 1
+    end
+
+    test "if metric with invalid prefix are dropped" do
+      GraphiteLimiter.parse_metric(@invalid_prefix_metric, @parse_opts)
       assert Prometheus.Metric.Counter.value(:metrics_blocked_total) == 0
       assert Prometheus.Metric.Counter.value(:metrics_sent_total) == 0
       assert Prometheus.Metric.Counter.value(:metrics_dropped_total) == 1

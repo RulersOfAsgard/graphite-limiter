@@ -1,1 +1,2 @@
 # Dialyzer warnings
+Guard test tuple_size

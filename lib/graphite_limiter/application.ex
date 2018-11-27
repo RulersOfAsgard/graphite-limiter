@@ -49,6 +49,7 @@ defmodule GraphiteLimiter.Application do
     set_env("HTTP_PORT", :http_port, :number)
     set_env("RECEIVER_PORT", :receiver_port, :number)
     set_env("WHITELIST", :path_whitelist, :list)
+    set_env("VALID_PREFIXES", :valid_prefixes, :list)
   end
 
   @spec sender_pool() :: list

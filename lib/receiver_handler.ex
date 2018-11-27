@@ -39,20 +39,18 @@ defmodule GraphiteReceiver.Handler do
       transport: transport,
       peername: peername,
       sender_pool_size: Application.get_env(:graphite_limiter, :sender_pool, 1),
-      white_list: Application.get_env(:graphite_limiter, :path_whitelist, [])
+      white_list: Application.get_env(:graphite_limiter, :path_whitelist, []),
+      valid_prefixes: Application.get_env(:graphite_limiter, :valid_prefixes, [""])
     })
   end
 
   # Server callbacks
 
-  def handle_info({:tcp, _port, message},
-                  %{peername: peer,
-                    sender_pool_size: pool_size,
-                    white_list: white_list} = state) do
+  def handle_info({:tcp, _port, message}, %{peername: peer} = state) do
     Logger.debug(fn ->
       "Received new message from peer #{peer}: #{inspect(message)}." end)
     Instrumenter.inc_metrics_received()
-    GraphiteLimiter.parse_metric(message, %{sender_pool_size: pool_size, white_list: white_list})
+    GraphiteLimiter.parse_metric(message, state)
     {:noreply, state}
   end
 
