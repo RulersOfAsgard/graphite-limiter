@@ -5,7 +5,7 @@ defmodule GraphiteFetcher do
   use GenServer
   require Logger
 
-  @graphite_api Application.get_env(:graphite_limiter, :graphite_api_module, GraphiteApi)
+  @metrics_api Application.get_env(:graphite_limiter, :metrics_api_module, PrometheusApi)
 
   # client api
 
@@ -80,13 +80,13 @@ defmodule GraphiteFetcher do
 
   @spec fetch_data() :: list
   defp fetch_data do
-    with {:ok, response} <- @graphite_api.get_metrics(),
+    with {:ok, response} <- @metrics_api.get_metrics(),
                     true <- is_list(response.body)
     do
       response.body
     else
       _ ->
-        Logger.warn("Failed to fetch graphite data")
+        Logger.warn("Failed to fetch data")
         []
     end
   end

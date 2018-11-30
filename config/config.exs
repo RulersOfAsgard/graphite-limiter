@@ -39,10 +39,17 @@ config :graphite_limiter,
   listen_retry_delay: 1000,
   send_buffer: 1000,
   sender_pool: 5,
+  http_port: 8080,
+  receiver_port: 2003,
+  parser: GraphiteLimiter.DefaultImpl,
   graphite_url: "http://localhost/render",
   graphite_query: "some.graphite.query",
   graphite_dest_relay_addr: "localhost",
   graphite_dest_relay_port: 2003,
-  graphite_api_module: GraphiteApi
+  metrics_api_module: PrometheusApi,
+  prometheus_query: "topk(10, sum(increase(metrics_by_path_total[5m])) by (path)/5)",
+  prometheus_url: "http://localhost:9090",
+  path_whitelist: []
+
 
 import_config "#{Mix.env()}.exs"

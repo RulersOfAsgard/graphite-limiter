@@ -15,6 +15,7 @@ defmodule GraphiteSender do
     |> Map.put(:queue_length, 0)
     |> Map.put(:messages, [])
     |> Map.put(:socket, connect())
+    |> Map.put(:send_buffer, Application.get_env(:graphite_limiter, :send_buffer))
     {:ok, new_state}
   end
 
@@ -44,7 +45,7 @@ defmodule GraphiteSender do
   def handle_cast({:send, message}, state) do
     {messages, queue_length} = {[message | state.messages], state.queue_length + 1}
     new_state =
-      with true <- queue_length > Application.get_env(:graphite_limiter, :send_buffer),
+      with true <- queue_length > state.send_buffer,
           :ok <- send_bulk(messages, state.socket)
       do
         Instrumenter.inc_metrics_sent(queue_length)

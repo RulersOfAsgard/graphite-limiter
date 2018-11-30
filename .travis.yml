@@ -3,9 +3,9 @@ sudo: false
 env:
   - MIX_ENV=test
 elixir:
-  - 1.6.2
+  - 1.7.3
 otp_release:
-  - 20.0
+  - 21.0
 before_script:
   - mix compile
   - MIX_ENV=dev travis_wait mix dialyzer --plt

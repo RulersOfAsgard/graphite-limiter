@@ -8,5 +8,7 @@ config :graphite_limiter,
   graphite_query: "sample.path.to.metric",
   graphite_dest_relay_addr: "localhost",
   graphite_dest_relay_port: 2004,
-  graphite_api_module: GraphiteApi.Mock,
-  run_test_server: true
+  metrics_api_module: GraphiteApi.Mock,
+  run_test_server: true,
+  path_whitelist: ["carbon.monitoring.test", "some.other.path"],
+  valid_prefixes: ["stats", "carbon"]
