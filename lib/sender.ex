@@ -7,7 +7,7 @@ defmodule GraphiteSender do
   use GenServer
 
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, %{}, opts)
+    GenServer.start_link(__MODULE__, %{name: opts[:name]}, opts)
   end
 
   def init(state) do
@@ -16,7 +16,13 @@ defmodule GraphiteSender do
     |> Map.put(:messages, [])
     |> Map.put(:socket, connect())
     |> Map.put(:send_buffer, Application.get_env(:graphite_limiter, :send_buffer))
+
+    monitor_message_queue(state)
     {:ok, new_state}
+  end
+
+  defp monitor_message_queue(%{name: name}) do
+    Process.send_after(name, :monitor_queue, 10_000)
   end
 
   @spec connect :: port
@@ -33,6 +39,13 @@ defmodule GraphiteSender do
         Logger.debug(fn -> "connected #{inspect(socket)}" end)
         socket
     end
+  end
+
+  def handle_info(:monitor_queue, state) do
+    state.name
+    |> Instrumenter.queue_length
+    monitor_message_queue(state)
+    {:noreply, state}
   end
 
   @spec handle_info(:timeout, map) :: {:noreply, map}

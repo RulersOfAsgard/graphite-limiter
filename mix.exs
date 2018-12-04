@@ -5,7 +5,7 @@ defmodule GraphiteLimiter.MixProject do
   def project do
     [
       app: :graphite_limiter,
-      version: "0.2.1",
+      version: "0.3.0",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env),
