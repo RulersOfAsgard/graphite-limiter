@@ -26,6 +26,9 @@ defmodule GraphiteLimiter.Instrumenter do
     Counter.declare([name: :metrics_by_path_total,
                      help: "Metrics by path count",
                      labels: [:path]])
+    Gauge.declare([name: :queue_length,
+                   help: "Message queue length",
+                   labels: [:process]])
   end
 
   @spec inc_errors_received(atom) :: :ok
@@ -66,6 +69,15 @@ defmodule GraphiteLimiter.Instrumenter do
   @spec inc_metrics_by_path(String.t) :: :ok
   def inc_metrics_by_path(path) do
     Counter.inc([name: :metrics_by_path_total, labels: [path]])
+  end
+
+  @spec queue_length(atom) :: integer
+  def queue_length(process) when is_atom(process) do
+    {:message_queue_len, length} = process
+    |> Process.whereis
+    |> Process.info(:message_queue_len)
+    Gauge.set([name: :queue_length, labels: [process]], length)
+    length
   end
 end
 

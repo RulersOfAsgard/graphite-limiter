@@ -5,7 +5,7 @@ defmodule GraphiteLimiterTest do
   @moduletag :capture_log
   import ExUnit.CaptureLog
   require Logger
-  require Prometheus.Metric.Counter
+  require Prometheus.Metric.{Counter, Gauge}
 
   @good_path "stats.path.min.metric"
   @bad_path "stats.overloaded.path.metric"
@@ -90,6 +90,13 @@ defmodule GraphiteLimiterTest do
         |> GraphiteLimiter.MetricsExporter.call([])
       assert conn.status == 200
       assert String.starts_with?(conn.resp_body, "# TYPE")
+    end
+  end
+
+  describe "Prometheus metrics" do
+    test "test if message_queue is counted" do
+      assert GraphiteLimiter.Instrumenter.queue_length(:GraphiteSender1) == 0
+      assert Prometheus.Metric.Gauge.value([name: :queue_length, labels: [:GraphiteSender1]]) == 0
     end
   end
 
