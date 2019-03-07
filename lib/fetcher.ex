@@ -46,7 +46,7 @@ defmodule GraphiteFetcher do
 
   @spec save(list(String.t), :ets.tid) :: atom | :ets.tid
   defp save(metric_paths, metric_table) do
-    Logger.debug(fn -> inspect(metric_paths) end)
+    Logger.info(fn -> "Blocked paths: #{inspect(metric_paths)}" end)
     :ets.insert(metric_table, {:paths, metric_paths})
     metric_table
   end
