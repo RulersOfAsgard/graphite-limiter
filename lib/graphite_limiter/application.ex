@@ -6,15 +6,16 @@ defmodule GraphiteLimiter.Application do
   use Application
   @dest_port Application.get_env(:graphite_limiter, :graphite_dest_relay_port)
 
-  @spec set_env(String.t, atom) :: :ok
+  @spec set_env(String.t(), atom) :: :ok
   defp set_env(sys_env, app_env) do
     env = System.get_env(sys_env) || Application.get_env(:graphite_limiter, app_env)
     Application.put_env(:graphite_limiter, app_env, env)
   end
 
-  @spec set_env(String.t, atom, :number | :list) :: :ok
+  @spec set_env(String.t(), atom, :number | :list) :: :ok
   defp set_env(sys_env, app_env, :number) do
     env = System.get_env(sys_env) || Application.get_env(:graphite_limiter, app_env)
+
     if is_number(env) do
       Application.put_env(:graphite_limiter, app_env, env)
     else
@@ -24,12 +25,14 @@ defmodule GraphiteLimiter.Application do
 
   defp set_env(sys_env, app_env, :list) do
     env = System.get_env(sys_env) || Application.get_env(:graphite_limiter, app_env)
+
     if is_list(env) do
       Application.put_env(:graphite_limiter, app_env, env)
     else
-      value = env
-      |> String.replace(" ", "")
-      |> String.split(",")
+      value =
+        env
+        |> String.replace(" ", "")
+        |> String.split(",")
 
       Application.put_env(:graphite_limiter, app_env, value)
     end
@@ -55,8 +58,9 @@ defmodule GraphiteLimiter.Application do
   @spec sender_pool() :: list
   defp sender_pool do
     pool_size = Application.get_env(:graphite_limiter, :sender_pool, 1)
+
     1..pool_size
-    |> Enum.map(fn(nr) ->
+    |> Enum.map(fn nr ->
       Supervisor.child_spec({GraphiteSender, name: :"GraphiteSender#{nr}"}, id: :"sender#{nr}")
     end)
   end
@@ -64,33 +68,52 @@ defmodule GraphiteLimiter.Application do
   def start(_type, _args) do
     runtime_configuration()
 
-    GraphiteLimiter.MetricsExporter.setup()
-    GraphiteLimiter.Instrumenter.setup()
+    reset_interval = Application.get_env(:graphite_limiter, :promehtheus_reset_interval, 3600)
 
     base_children = [
+      Supervisor.child_spec(
+        {Task, fn -> GraphiteLimiter.PrometheusReset.reset(reset_interval) end},
+        id: :reset_task,
+        restart: :permanent
+      ),
       Plug.Adapters.Cowboy.child_spec(
-        :http, GraphiteLimiter.MetricsExporter, [],
-        port: Application.get_env(:graphite_limiter, :http_port)),
+        :http,
+        GraphiteLimiter.MetricsExporter,
+        [],
+        port: Application.get_env(:graphite_limiter, :http_port)
+      ),
       {GraphiteFetcher, name: GraphiteFetcher},
       {GraphiteReceiver, port: Application.get_env(:graphite_limiter, :receiver_port)}
     ]
+
     children =
       sender_pool()
       |> List.flatten(base_children)
 
     opts = [strategy: :one_for_one, name: GraphiteLimiter.Supervisor]
 
-    if  Application.get_env(:graphite_limiter, :run_test_server) do
+    if Application.get_env(:graphite_limiter, :run_test_server) do
       children
-      |> List.insert_at(0, Supervisor.child_spec(
-        {Task, fn -> GraphiteTestServer.accept(@dest_port) end},
-        id: :test_task, restart: :permanent))
-      |> List.insert_at(0, Supervisor.child_spec(
-        {Task.Supervisor, name: DummyServer.TaskSupervisor}, id: :test))
+      |> List.insert_at(
+        0,
+        Supervisor.child_spec(
+          {Task, fn -> GraphiteTestServer.accept(@dest_port) end},
+          id: :test_task,
+          restart: :permanent
+        )
+      )
+      |> List.insert_at(
+        0,
+        Supervisor.child_spec(
+          {Task.Supervisor, name: DummyServer.TaskSupervisor},
+          id: :test
+        )
+      )
       |> Supervisor.start_link(opts)
     else
       Supervisor.start_link(children, opts)
     end
+
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
   end

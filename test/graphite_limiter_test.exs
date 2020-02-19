@@ -98,6 +98,11 @@ defmodule GraphiteLimiterTest do
       assert GraphiteLimiter.Instrumenter.queue_length(:GraphiteSender1) == 0
       assert Prometheus.Metric.Gauge.value([name: :queue_length, labels: [:GraphiteSender1]]) == 0
     end
+
+    test "if GraphiteLimiter.PrometheusReset.reset() is reseting collectors " do
+      GraphiteLimiter.PrometheusReset.reset(1000)
+      assert Prometheus.Metric.Counter.value(:metrics_received_total) == 0
+    end
   end
 
 end

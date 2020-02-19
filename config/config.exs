@@ -49,6 +49,7 @@ config :graphite_limiter,
   metrics_api_module: PrometheusApi,
   prometheus_query: "topk(10, sum(increase(metrics_by_path_total[5m])) by (path)/5)",
   prometheus_url: "http://localhost:9090",
+  promehtheus_reset_interval: 86_400_000, # miliseconds (1000 * 3600 * 24)
   path_whitelist: []
 
 
