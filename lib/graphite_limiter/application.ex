@@ -68,7 +68,7 @@ defmodule GraphiteLimiter.Application do
   def start(_type, _args) do
     runtime_configuration()
 
-    reset_interval = Application.get_env(:graphite_limiter, :promehtheus_reset_interval, 3600)
+    reset_interval = Application.get_env(:graphite_limiter, :prometheus_reset_interval, 3600_000)
 
     base_children = [
       Supervisor.child_spec(
