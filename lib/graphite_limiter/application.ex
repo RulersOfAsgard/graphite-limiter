@@ -4,6 +4,9 @@ defmodule GraphiteLimiter.Application do
   @moduledoc false
 
   use Application
+
+  alias GraphiteLimiter.{Instrumenter, MetricsExporter}
+
   @dest_port Application.get_env(:graphite_limiter, :graphite_dest_relay_port)
 
   @spec set_env(String.t(), atom) :: :ok
@@ -67,6 +70,9 @@ defmodule GraphiteLimiter.Application do
 
   def start(_type, _args) do
     runtime_configuration()
+
+    Instrumenter.setup()
+    MetricsExporter.setup()
 
     reset_interval = Application.get_env(:graphite_limiter, :prometheus_reset_interval, 3600_000)
 
