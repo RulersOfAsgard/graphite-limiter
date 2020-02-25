@@ -4,13 +4,13 @@ defmodule GraphiteLimiter.PrometheusReset do
   """
   require Prometheus.Registry
 
-  alias GraphiteLimiter.{Instrumenter, MetricsExporter}
+  alias GraphiteLimiter.Instrumenter
   alias Prometheus.Registry
 
   def reset(interval) do
-    :ok = Registry.clear()
+    Registry.deregister_collector(:default, :prometheus_counter)
+    Registry.register_collector(:default, :prometheus_counter)
     Instrumenter.setup()
-    MetricsExporter.setup()
     Process.sleep(interval)
   end
 end
