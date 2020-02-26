@@ -56,74 +56,58 @@ defmodule GraphiteLimiter.Instrumenter do
 
   @spec inc_errors_received(atom) :: :ok
   def inc_errors_received(type) do
-    try do
-      Counter.inc(name: :errors_received_total, labels: [type])
-    rescue
-      Prometheus.UnknownMetricError -> :ok
-    end
+    Counter.inc(name: :errors_received_total, labels: [type])
+  rescue
+    Prometheus.UnknownMetricError -> :ok
   end
 
   @spec inc_errors_sent(atom) :: :ok
   def inc_errors_sent(type) do
-    try do
-      Counter.inc(name: :errors_sent_total, labels: [type])
-    rescue
-      Prometheus.UnknownMetricError -> :ok
-    end
+    Counter.inc(name: :errors_sent_total, labels: [type])
+  rescue
+    Prometheus.UnknownMetricError -> :ok
   end
 
   @spec inc_metrics_received :: :ok
   def inc_metrics_received do
-    try do
-      Counter.inc(name: :metrics_received_total, labels: [])
-    rescue
-      Prometheus.UnknownMetricError -> :ok
-    end
+    Counter.inc(name: :metrics_received_total, labels: [])
+  rescue
+    Prometheus.UnknownMetricError -> :ok
   end
 
   @spec inc_metrics_sent :: :ok
   def inc_metrics_sent do
-    try do
-      Counter.inc(name: :metrics_sent_total, labels: [])
-    rescue
-      Prometheus.UnknownMetricError -> :ok
-    end
+    Counter.inc(name: :metrics_sent_total, labels: [])
+  rescue
+    Prometheus.UnknownMetricError -> :ok
   end
 
   @spec inc_metrics_sent(number) :: :ok
   def inc_metrics_sent(value) do
-    try do
-      Counter.inc([name: :metrics_sent_total, labels: []], value)
-    rescue
-      Prometheus.UnknownMetricError -> :ok
-    end
+    Counter.inc([name: :metrics_sent_total, labels: []], value)
+  rescue
+    Prometheus.UnknownMetricError -> :ok
   end
 
   @spec inc_metrics_blocked :: :ok
   def inc_metrics_blocked do
-    try do
-      Counter.inc(name: :metrics_blocked_total, labels: [])
-    rescue
-      Prometheus.UnknownMetricError -> :ok
-    end
+    Counter.inc(name: :metrics_blocked_total, labels: [])
+  rescue
+    Prometheus.UnknownMetricError -> :ok
   end
 
   @spec inc_metrics_dropped :: :ok
   def inc_metrics_dropped do
-    try do
-      Counter.inc(name: :metrics_dropped_total, labels: [])
-    rescue
-      Prometheus.UnknownMetricError -> :ok
-    end
+    Counter.inc(name: :metrics_dropped_total, labels: [])
+  rescue
+    Prometheus.UnknownMetricError -> :ok
   end
 
   @spec inc_metrics_by_path(String.t()) :: :ok
   def inc_metrics_by_path(path) do
-    try do
-      Counter.inc(name: :metrics_by_path_total, labels: [path])
-    rescue
-      Prometheus.UnknownMetricError -> :ok
-    end
+    Counter.inc(name: :metrics_by_path_total, labels: [path])
+  rescue
+    Prometheus.UnknownMetricError -> :ok
   end
 
   @spec queue_length(atom) :: integer
