@@ -12,3 +12,5 @@ config :graphite_limiter,
   run_test_server: true,
   path_whitelist: ["carbon.monitoring.test", "some.other.path"],
   valid_prefixes: ["stats", "carbon"]
+
+config :tesla, adapter: Tesla.Mock

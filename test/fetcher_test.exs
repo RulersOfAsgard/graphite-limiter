@@ -17,7 +17,7 @@ defmodule GraphitFetcherTest do
     assert resp == ["stats.other.overloaded.path", "stats.overloaded.path"]
   end
 
-  test "connection error on cache update" do
+  test "connection error on cache update (graphite API)" do
     with_mock GraphiteApi.Mock, [get_metrics: fn() -> {:error, :econrefused} end] do
       Process.send(GraphiteFetcher, :update_cache, [])
       :sys.get_state(GraphiteFetcher)

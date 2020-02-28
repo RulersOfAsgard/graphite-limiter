@@ -1,6 +1,6 @@
 defmodule PrometheusApi.Result do
   @moduledoc false
-  defstruct [metric: %{}, values: []]
+  defstruct metric: %{}, values: []
 end
 
 defmodule PrometheusApi do
@@ -23,13 +23,18 @@ defmodule PrometheusApi do
 
   @spec get_metrics() :: {:error, any} | {:ok, map}
   def get_metrics do
-    now = DateTime.utc_now
-    |> DateTime.to_unix
+    now =
+      DateTime.utc_now()
+      |> DateTime.to_unix()
+
     with {:ok, response} <- get("api/v1/query_range", query: [start: now - 600, end: now]),
+         true <- Enum.any?(response.headers, &(&1 == {"content-type", "application/json"})),
+         true <- is_map(response.body),
+         true <- Map.has_key?(response.body, "data"),
          true <- is_list(response.body["data"]["result"]) do
-          response.body["data"]["result"]
-          |> serialize
-          |> fn(results) -> {:ok, %{body: results}} end.()
+      response.body["data"]["result"]
+      |> serialize
+      |> (fn results -> {:ok, %{body: results}} end).()
     else
       _ -> {:error, []}
     end
@@ -38,20 +43,27 @@ defmodule PrometheusApi do
   @spec serialize(list(%Result{})) :: any
   defp serialize(results) do
     results
-    |> Enum.map(fn(x) ->
-      datapoints = x["values"]
-      |> Enum.map(fn([timestamp, value]) ->
-        int_value = value
-        |> to_integer
-        [int_value, timestamp] end)
+    |> Enum.map(fn x ->
+      datapoints =
+        x["values"]
+        |> Enum.map(fn [timestamp, value] ->
+          int_value =
+            value
+            |> to_integer
+
+          [int_value, timestamp]
+        end)
+
       %{"target" => x["metric"]["path"], "datapoints" => datapoints}
     end)
   end
 
-  @spec to_integer(String.t) :: integer
+  @spec to_integer(String.t()) :: integer
   defp to_integer(value) do
-    {int, _} = value
-    |> Integer.parse
+    {int, _} =
+      value
+      |> Integer.parse()
+
     int
   end
 end
