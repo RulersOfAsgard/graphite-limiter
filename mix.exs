@@ -5,8 +5,8 @@ defmodule GraphiteLimiter.MixProject do
   def project do
     [
       app: :graphite_limiter,
-      version: "0.3.2",
-      elixir: "~> 1.6",
+      version: "0.3.3",
+      elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env),
       dialyzer: [plt_add_deps: :transitive, ignore_warnings: "dialyzer.ignore-warnings"],
@@ -37,7 +37,7 @@ defmodule GraphiteLimiter.MixProject do
       {:plug_cowboy, "~> 1.0"},
       {:ranch, "~> 1.5.0", override: true},
       {:prometheus_plugs, "~> 1.1"},
-      {:distillery, "~> 1.5", runtime: false},
+      {:distillery, "~> 2.0"},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.8", only: :test},
