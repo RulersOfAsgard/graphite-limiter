@@ -9,6 +9,8 @@ defmodule PrometheusApi do
   require Logger
   alias PrometheusApi.Result
 
+  adapter Tesla.Adapter.Hackney, recv_timeout: 30_000
+
   @behaviour MetricsApi.Impl
 
   plug(Tesla.Middleware.BaseUrl, Application.get_env(:graphite_limiter, :prometheus_url))
@@ -36,7 +38,7 @@ defmodule PrometheusApi do
       |> serialize
       |> (fn results -> {:ok, %{body: results}} end).()
     else
-      _ -> {:error, []}
+      err -> err
     end
   end
 

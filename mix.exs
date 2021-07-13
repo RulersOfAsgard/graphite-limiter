@@ -31,6 +31,7 @@ defmodule GraphiteLimiter.MixProject do
   defp deps do
     [
       {:tesla, "~> 1.4.0"},
+      {:hackney, "~> 1.17.0"},
       {:jason, ">= 1.0.0"},
       {:mock, "~> 0.3.0", only: :test},
       {:cowboy, "~> 1.0"},
